@@ -2,3 +2,4 @@ pandas
 gunicorn
 numpy
 dash==2.11.1
+bs4
