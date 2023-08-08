@@ -6,5 +6,5 @@ bs4
 jupyter_dash
 dash_table
 dash_bootstrap_components
-re
+
 plotly.express
