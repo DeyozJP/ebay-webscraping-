@@ -27,7 +27,7 @@ import numpy as np
 import dash_bootstrap_components as dbc
 
 
-# In[7]:
+# In[23]:
 
 
 def items(search_value):
@@ -36,7 +36,7 @@ def items(search_value):
         #     url = f'https://www.ebay.com {item}'
             main_dic = {}
             k=0
-            for page in range(1,3):
+            for page in range(1):
                 response = requests.get(url+str(page)).text
                 html_text = BeautifulSoup(response, "html.parser")
 
@@ -56,7 +56,7 @@ def items(search_value):
 #                     item_info['shipping'] =  item.find('span', class_='s-item__dynamic s-item__freeXDays').text if item.find('span', class_='s-item__dynamic s-item__freeXDays') is not None else item.find('span', class_='s-item__shipping s-item__logisticsCost').text
 #                     item_info['shipping_cost'] = float(0) if  item_info['shipping'].startswith('Free') else float(re.sub('[^[0-9]+\.[0-9]+$]', "", item_info['shipping'][2:7])) 
                     item_info['free return'] = 'Yes' if item.find('span', class_="s-item__free-returns s-item__freeReturnsNoFee") is not None else 'No'
-                    item_info['percent_dropped'] = float(re.sub('\W', "", item.find('span', class_="s-item__discount s-item__discount").text[:2])) if item.find('span', class_="s-item__discount s-item__discount") is not None else float (0)
+#                     item_info['percent_dropped'] = float(re.sub('\W', "", item.find('span', class_="s-item__discount s-item__discount").text[:2])) if item.find('span', class_="s-item__discount s-item__discount") is not None else float (0)
                     item_info['review_star'] = float(item.find('div', class_="x-star-rating").text[:3]) if item.find('div', class_="x-star-rating") is not None else np.nan
                     item_info['review_count'] = float(re.sub('[a-zA-Z]+',"",item.find('span', class_="s-item__reviews-count").text[:4]))if item.find('span', class_='s-item__reviews-count') is not None else np.nan
     
@@ -77,13 +77,13 @@ def items(search_value):
             return table
 
 
-# In[19]:
+# In[24]:
 
 
 app = dash.Dash(prevent_initial_callbacks =True, external_stylesheets = [dbc.themes.PULSE],
                meta_tags =[{'name':'viewport',
                            'content':'width=device-width, initial-scale = 0.9, maximum-scale = 1.9, minimum-scale = 0.5'}])
-server = app.server
+
 app.layout = html.Div([
 #     dbc.Button('Success', color ="success", className ="mr-1"),
     html.H1('EBAY Webscraping and Analytics', style= {'margin': "1px", 'text-align':'center'}),
@@ -222,7 +222,7 @@ app.layout = html.Div([
          
 def generate_table_and_title_figure_dd (search_value):
     if search_value is None:
-        search_value = "no table to display"
+        search_value = "Fender"
     else:
         global dataframe
 
@@ -294,14 +294,14 @@ def generate_table_and_title_figure_dd (search_value):
 
 
 @app.callback(
-    Output(component_id ='table_container2', component_property ='children', allow_duplicate = True),
+    Output(component_id ='table_container2', component_property ='children'),
     Input(component_id='search_desc', component_property = 'value'),
     Input(component_id='dynamic-dropdown', component_property = 'value'), prevent_initial_call = True)
 
 
 def table(search_value, option):
     if not option:
-        selection = ' '
+        selection = 'Brand New'
     else: 
         global df_dash
         selection = option
