@@ -3,20 +3,14 @@
 
 # ## Web Scrapping Project
 
-# In[1]:
-
-
-# pip install dash-bootstrap-components
-
-
-# In[1]:
+# In[8]:
 
 
 import requests
 import json
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime
+
 import re
 import dash
 # import dash_core_components as dcc
@@ -33,7 +27,7 @@ import numpy as np
 import dash_bootstrap_components as dbc
 
 
-# In[2]:
+# In[7]:
 
 
 def items(search_value):
@@ -69,7 +63,7 @@ def items(search_value):
                     item_info['bid']= 'Yes' if item.find('span', class_="s-item__bids s-item__bidCount") is not None else 'No'
 #                     item_info['No_of_bids'] = re.sub('[a-zA-Z]+',"", item.find('span', class_="s-item__bids s-item__bidCount").text) if item.find('span', class_="s-item__bids s-item__bidCount") is not None else np.nan
                     item_info['bids_ends_on'] = item.find('span', class_="s-item__time-end").text if item.find('span', class_="s-item__time-end") is not None else np.nan
- 
+                    del item_info['price_raw']
 
 
                     # Assign the created dictionary of shoe information to the main dictionary, which key is index and value is shoe_info(dictionary of scrapped variables)
@@ -83,34 +77,12 @@ def items(search_value):
             return table
 
 
-# In[126]:
-
-
-def style_c():
-    layout_style = {
-        'display': "inline-block",
-        'margin' : '5px auto',
-        'padding':'0px 20px',
-        'text-align':'center', 
-        'font-size': "20px"
-    }
-    
-    return layout_style
-
-
-# In[ ]:
-
-
-
-
-
-# In[222]:
+# In[19]:
 
 
 app = dash.Dash(prevent_initial_callbacks =True, external_stylesheets = [dbc.themes.PULSE],
                meta_tags =[{'name':'viewport',
                            'content':'width=device-width, initial-scale = 0.9, maximum-scale = 1.9, minimum-scale = 0.5'}])
-server = app.server
 
 app.layout = html.Div([
 #     dbc.Button('Success', color ="success", className ="mr-1"),
@@ -223,32 +195,32 @@ app.layout = html.Div([
 
 # one callback to set minor values & HTML output
 
-
+##### commentout for a while
 
 @app.callback(
+    Output(component_id ='table_container', component_property ='children', allow_duplicate= True),
+    
     Output('search product table', 
            component_property = 'children'),
+    
+    Output(component_id='bar1_condition_distribution',
+           component_property ='figure'),
+    
+    Output(component_id = 'stackchart_bid', 
+           component_property="figure"),
+    
+    Output (component_id = "dynamic-dropdown", 
+             component_property = 'options'),
+    
+    
+    
     Input(component_id ='search_desc', 
           component_property ='value'), prevent_initial_call = True
 )
          
          
          
-def update_title(search_value):
-    if not search_value:
-        search_value = '"enter search key words"'
-    title = f'The above table is the data result for the entered search description "{search_value}".'
-        
-    return title
-         
-@app.callback(
-    Output(component_id ='table_container', component_property ='children', allow_duplicate= True),
-    Input(component_id ="search_desc",
-         component_property ="value"), prevent_initial_call = True
-
-)     
-
-def generate_table(search_value):
+def generate_table_and_title_figure_dd (search_value):
     if search_value is None:
         search_value = "no table to display"
     else:
@@ -268,30 +240,20 @@ def generate_table(search_value):
                                   page_current = 0,
                                   page_size = 4,
                                   style_cell ={'textAlign':'left'})
-        return dataframe_dash
-#         return dataframe
-
-
-## creating a link for barchart1 adn stack barchart
-
-@app.callback(
-    Output(component_id='bar1_condition_distribution',
-           component_property ='figure'),
-
-    Input(component_id='search_desc',
-         component_property ='value'), prevent_initial_call= False
-    
-
-)
-
-
-def generate_barfig1(search_value):
-
-        dataframe  = items(search_value)
+        title = f'The above table is the data result for the entered search description "{search_value}".'
+        
+        
+        
+        
         dataframe1 = dataframe.copy(deep = True)
+        data = pd.DataFrame(dataframe1['condition'].unique())[0]
+        option = [{'label':i, 'value':i} for i in data]
 
         
         bar_data = dataframe1.groupby('condition')['item_name'].count().sort_values(ascending  = False).reset_index()
+        stackdata = pd.DataFrame(round(dataframe1.groupby("condition")['bid'].value_counts(normalize = True), 2))
+        
+        
         barfig_1 = px.bar(data_frame =bar_data, 
                           x ='condition',
                           y= 'item_name',
@@ -306,113 +268,29 @@ def generate_barfig1(search_value):
         size=11,
         color="RebeccaPurple"))
         
-        return barfig_1
         
-        
-
-
-@app.callback(
-    Output(component_id = 'stackchart_bid', 
-           component_property="figure"),
-    Input(component_id ='search_desc', 
-          component_property ='value'), prevent_initial_call= False
-)
-
-
-def generate_stackbar (search_value):
-    dataframe  = items(search_value)
-    dataframe2 = dataframe.copy(deep = True)
-    
-    stackdata = pd.DataFrame(round(dataframe2.groupby("condition")['bid'].value_counts(normalize = True), 2))
-    stackchart_norm = stackdata.rename(columns = {'condition':"condition",'bid':'rate'}).reset_index().sort_values(ascending = False, by='rate')
-    stackchart_fig = px.bar(data_frame = stackchart_norm, 
+        stackchart_norm = stackdata.rename(columns = {'condition':"condition",'bid':'rate'}).reset_index().sort_values(ascending = False, by='rate')
+        stackchart_fig = px.bar(data_frame = stackchart_norm, 
                                x = 'condition',
                                y= 'rate',
                                color ='bid',
                                color_discrete_map = {'Yes':'Grey', 'No':'LightSeaGreen'},
                                title = '% of product listed in bid', text_auto = True, 
                            labels ={'condition':"", 'rate': ""})
-    stackchart_fig.update_layout(height = 350, width = 400, yaxis = {'visible':False}, 
+        stackchart_fig.update_layout(height = 350, width = 400, yaxis = {'visible':False}, 
                                  font=dict(
 #         family="Courier New, monospace",
         size=11,
         color="RebeccaPurple")
                                 )
         
-       
-    return stackchart_fig
-
-### creating a link for a maximum and minimum price of the product 
-
-# @app.callback(
-#     Output(component_id = "highest_price_listing", component_property ='children'),
-    
-#     Input(component_id ="search_desc", component_property = 'value')
-# )
-    
-# def h4_highest_price_text(search_value):
-#     if not search_value:
-#         highest_price_product_title = 'no value'
-#     else:
-#         dataframe = items(search_value)
-#         dataframe2 = dataframe.copy(deep = True)
-#         data = pd.DataFrame(dataframe2.groupby('item_name')['max_price'].max().sort_values(ascending = False).reset_index(), columns = {'max_price':"max_price", 'item_name' : 'item_name'})
-#         highest_price_product_title = f'Most expensive product is {data.iloc[0][1]}, costing {data.iloc[0][0]}'
-      
-#         return highest_price_product_title
-    
         
-    
-    
-
-# @app.callback(
-#     Output(component_id = 'lowest_price_listing', component_property ="children"),
-#    Input(component_id ="search_desc", component_property = 'value')
-# )
+        
+        return dataframe_dash, title, barfig_1, stackchart_fig, option
 
 
-# def h4_lowersprice_text(search_value):
-#     if not search_value:
-#         highest_price_product_title = 'no value'
-#     else:
-#         dataframe = items(search_value)
-#         dataframe2 = dataframe.copy(deep = True)
-#         lowest_price_product_title = f'Least expensive product is xxx costing {dataframe2["min_price"].min()}'
-    
-#         return lowest_price_product_title
 
 
-# creating a link to make the option for ddc appear dynamically by user input in search box.
-
-@app.callback(
-     Output (component_id = "dynamic-dropdown", 
-             component_property = 'options'),
-    Input(component_id = 'search_desc', component_property ='value'),
-    prevent_initial_call = True
-
-)
-
-# @app.callback(
-#      Output (component_id = "dictionary", 
-#              component_property = 'value'),
-#     Input(component_id = 'search_desc', component_property ='value')
-
-# )
-
-# # creating a function to make the dataframe columns 
-    
-    
-def get_dd_option(search_value):
-    if not search_value:
-        column = "no columns"
-    else:
-        dataframe = items(search_value)
-        dataframe2 = dataframe.copy(deep=True)
-        data = pd.DataFrame(dataframe2['condition'].unique())[0]
-        option = [{'label':i, 'value':i} for i in data]
-        return option
-    
-    
 
 
 @app.callback(
@@ -463,6 +341,6 @@ def table(search_value, option):
 
     
 if __name__ == '__main__':
-    app.run_server(debug = True, port = 8053, jupyter_mode = 'external')
+    app.run_server(debug = True, port = 8052, jupyter_mode = 'external')
 # app.run_server(debug = False)
 
