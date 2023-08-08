@@ -83,7 +83,7 @@ def items(search_value):
 app = dash.Dash(prevent_initial_callbacks =True, external_stylesheets = [dbc.themes.PULSE],
                meta_tags =[{'name':'viewport',
                            'content':'width=device-width, initial-scale = 0.9, maximum-scale = 1.9, minimum-scale = 0.5'}])
-
+server = app.server
 app.layout = html.Div([
 #     dbc.Button('Success', color ="success", className ="mr-1"),
     html.H1('EBAY Webscraping and Analytics', style= {'margin': "1px", 'text-align':'center'}),
