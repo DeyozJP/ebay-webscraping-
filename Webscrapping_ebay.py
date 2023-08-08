@@ -28,7 +28,7 @@ from dash import dash_table
 from dash_table import DataTable, FormatTemplate
 import plotly.express as px
 from dash.dash_table.Format import Group
-import seaborn as sns
+
 import numpy as np
 import dash_bootstrap_components as dbc
 
